@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI-RA | AI 赋能医疗器械注册文档</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Google Fonts: Noto Serif SC & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700;900&family=Inter:wght@400;700&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <!-- Custom Styles & Tailwind Config -->
+  <style type="text/tailwindcss">
+    @layer base {
+      body {
+        @apply bg-gray-50 text-gray-800;
+        font-family: 'Inter', 'Noto Serif SC', serif;
+      }
+      h1, h2, h3, h4, h5, h6 {
+        @apply font-bold font-['Noto_Serif_SC',_serif];
+      }
+      .title-highlight { color: #F05E1C; }
+      .document-card {
+        @apply bg-white rounded-lg shadow-lg p-6 transition-all duration-300 hover:shadow-2xl hover:-translate-y-2;
+        min-height: 400px; /* 确保最小高度一致 */
+      }
+      .document-card h4 { @apply text-lg font-bold text-gray-700 border-b pb-2 mb-4; }
+      .document-card .section-title { @apply text-base font-bold text-gray-800 mt-4; }
+      .document-card .law-text { @apply text-sm text-blue-600 bg-blue-50 p-3 rounded-md mt-2; }
+      .document-card .expert-text { @apply text-sm text-orange-600 bg-orange-50 p-3 rounded-md mt-2; }
+      .feature-card {
+        @apply bg-white p-6 rounded-lg shadow-md border-t-4 transition-all hover:shadow-xl hover:-translate-y-1;
+        border-color: #F05E1C;
+      }
+    }
+    @layer utilities {
+      .fade-in-up {
+        opacity: 0;
+        transform: translateY(20px);
+        transition: opacity 0.6s cubic-bezier(0.33, 1, 0.68, 1), transform 0.6s cubic-bezier(0.33, 1, 0.68, 1);
+      }
+      .fade-in-up.is-visible { opacity: 1; transform: translateY(0); }
+      @media (prefers-reduced-motion: reduce) { .fade-in-up { transition: none; } }
+
+      /* 渐变文字动画效果 */
+      .gradient-text {
+        background: linear-gradient(45deg, #F05E1C, #ff6b35, #F05E1C);
+        background-size: 300% 300%;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        animation: gradient-shift 4s ease-in-out infinite;
+      }
+
+      @keyframes gradient-shift {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+      }
+
+      /* 左侧案例滚动容器：默认高度，JS 会在运行时对齐到右卡片 */
+      .scroll-box {
+        @apply relative overflow-y-auto;
+        max-height: 16rem; /* 兜底值，实际会被 JS 覆盖为与右卡片等高 */
+        scrollbar-width: thin;
+        scrollbar-color: #F05E1C #f3f4f6;
+        scroll-behavior: smooth; /* 平滑滚动 */
+      }
+      
+      /* 自定义滚动条样式 */
+      .scroll-box::-webkit-scrollbar {
+        width: 6px;
+      }
+      
+      .scroll-box::-webkit-scrollbar-track {
+        background: #f3f4f6;
+        border-radius: 3px;
+      }
+      
+      .scroll-box::-webkit-scrollbar-thumb {
+        background: #F05E1C;
+        border-radius: 3px;
+      }
+      
+      .scroll-box::-webkit-scrollbar-thumb:hover {
+        background: #d94a1a;
+      }
+
+      .badge { @apply inline-flex items-center gap-1 text-xs font-semibold rounded-full px-2.5 py-1; }
+      .badge-danger { @apply text-white; background-color: #dc2626; } /* red-600 */
+      .badge-success { @apply text-white; background-color: #16a34a; } /* green-600 */
+      .badge-warn { @apply text-yellow-800; background-color: #fef08a; } /* yellow-200 */
+
+      .cell-diff mark { background: #fde68a; padding: 0 .2rem; border-radius: .2rem; }
+    }
+
+    @media print {
+      body { font-size: 10pt; background-color: #fff; }
+      .no-print { display: none; }
+      header, footer, section { background-color: transparent !important; color: #000 !important; }
+      .document-card, .feature-card { box-shadow: none; border: 1px solid #ccc; }
+    }
+/* 左卡片等高：卡片本身固定高，内部内容滚动 */
+#left-card { 
+  display: flex; 
+  flex-direction: column; 
+  height: auto;
+}
+
+/* 滚动区域：设置合理的默认高度，JS会动态调整 */
+#left-card .scroll-box {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+  max-height: 22rem; /* 默认高度，JS会动态调整 */
+}
+
+/* 确保左右卡片高度一致 */
+#left-card, #right-card {
+  height: fit-content;
+  min-height: 400px; /* 确保最小高度一致 */
+}
+
+/* 保险丝：确保box-sizing一致，减少计算偏差 */
+.document-card, .scroll-box { 
+  box-sizing: border-box; 
+}
+
+/* 小屏（单列）时使用固定高度 */
+@media (max-width: 1279.98px) {
+  #left-card { height: auto !important; }
+  #left-card .scroll-box { max-height: 20rem !important; }
+}
+
+/* 大屏（双列）时取消滚动区域的高度限制，让flex-1自动填充 */
+@media (min-width: 1280px) {
+  #left-card .scroll-box { max-height: none !important; }
+}
+
+  </style>
+</head>
+<body class="antialiased">
+
+  <!-- CONFIGURATION OBJECT -->
+  <script>
+    const CONFIG = {
+      primaryColor: '#F05E1C',
+      langMix: '80: 20',
+      density: 'cozy'
+    };
+  </script>
+
+  <!-- HEADER -->
+  <header class="bg-white container mx-auto px-4 py-12 md:py-16 text-center border-b border-gray-200">
+    <h1 class="text-4xl md:text-6xl font-black gradient-text">AI 赋能医疗器械注册文档</h1>
+    <h2 class="mt-6 text-2xl md:text-3xl" style="color: #F05E1C;">Gen-AI 关注 RA 的每一步</h2>
+    <div class="mt-6 text-sm text-gray-400">
+      <span>发布日期: 2025年8月14日</span> / <span>作者: AI-RA 生成器</span>
+    </div>
+  </header>
+
+  <!-- MAIN BODY -->
+  <main class="container mx-auto px-4 py-16">
+
+    <!-- Core Functions Section -->
+    <section class="fade-in-up">
+      <h2 class="text-3xl md:text-4xl text-center mb-12">核心功能</h2>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <!-- Left Column -->
+        <div class="bg-white p-8 rounded-lg shadow-md">
+          <h3 class="text-2xl mb-4 text-center">注册文档框架生成</h3>
+          <p class="text-gray-600 text-center mb-6">自动从法规原文提取章节结构，并融合专家解读，一键生成合规文档框架。</p>
+          <ul class="space-y-3">
+            <li class="flex items-start"><i class="fa-solid fa-file-import mr-3 mt-1.5" style="color: #F05E1C;"></i><span><strong>提取框架</strong>：从法规原文自动构建注册文档模板。</span></li>
+            <li class="flex items-start"><i class="fa-solid fa-magnifying-glass mr-3 mt-1.5" style="color: #F05E1C;"></i><span><strong>解析法规</strong>：智能匹配法规要求至对应的章节下。</span></li>
+            <li class="flex items-start"><i class="fa-solid fa-user-tie mr-3 mt-1.5" style="color: #F05E1C;"></i><span><strong>生成解读</strong>：基于知识库为法规要求生成通俗解读。</span></li>
+            <li class="flex items-start"><i class="fa-solid fa-wand-magic-sparkles mr-3 mt-1.5" style="color: #F05E1C;"></i><span><strong>自动排版</strong>：统一应用预设的标题与文本格式。</span></li>
+          </ul>
+        </div>
+        <!-- Right Column -->
+        <div class="bg-white p-8 rounded-lg shadow-md">
+          <h3 class="text-2xl mb-4 text-center">注册文档一致性核查</h3>
+          <p class="text-gray-600 text-center mb-6">对固定模块（如产品名称、型号）在多份文件中进行智能比对，确保信息统一。</p>
+          <ul class="space-y-3">
+            <li class="flex items-start"><i class="fa-solid fa-check-double mr-3 mt-1.5" style="color: #F05E1C;"></i><span><strong>核查一致性</strong>：对固定模块进行跨文档比对。</span></li>
+            <li class="flex items-start"><i class="fa-solid fa-map-location-dot mr-3 mt-1.5" style="color: #F05E1C;"></i><span><strong>定位差异点</strong>：自动生成差异对照表与修改建议。</span></li>
+            <li class="flex items-start"><i class="fa-solid fa-list-check mr-3 mt-1.5" style="color: #F05E1C;"></i><span><strong>检查完整性</strong>：结合技术要求，检查文档模块完整度。</span></li>
+            <li class="flex items-start"><i class="fa-solid fa-file-contract mr-3 mt-1.5" style="color: #F05E1C;"></i><span><strong>输出报告</strong>：一键生成具体模块的一致性核查报告。</span></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Document Examples Section -->
+    <section class="mt-24 fade-in-up">
+      <h2 class="text-3xl md:text-4xl text-center mb-12">应用案例：文档预览</h2>
+             <div class="grid grid-cols-1 xl:grid-cols-2 gap-8 items-stretch" id="case-grid">
+        <!-- Document 1 -->
+                 <article class="document-card h-full flex flex-col" id="left-card">
+          <h4>案例1: 有源医疗器械使用期限评价报告</h4>
+
+          <!-- 固定高度滚动内容（高度将由 JS 对齐右卡片） -->
+                     <div id="left-scroll" class="scroll-box flex-1 min-h-0 overflow-y-auto">
+            <!-- 滚动指示器 -->
+            <div class="text-xs text-gray-400 text-center mb-2 opacity-60">
+              <i class="fa-solid fa-arrows-up-down mr-1"></i>可滚动查看更多内容
+            </div>
+            <!-- 1 目的 -->
+            <div>
+              <p class="section-title">1、目的</p>
+              <p class="law-text"><strong>【法规原文要求】</strong>“医疗器械注册申请人应在注册资料中明确产品的使用期限并提供相关的验证资料。本指导原则适用于有源医疗器械，既包括有源非植入类器械（医疗器械软件除外），也包括有源植入类医疗器械。”（见第一章 适用范围）</p>
+              <div class="expert-text">
+                <strong>【专家解读】</strong>
+                <ul class="list-disc pl-5 mt-2 space-y-1">
+                  <li>依据《医疗器械说明书和标签管理规定》及《医疗器械注册与备案管理办法》制定；</li>
+                  <li>覆盖所有有源医疗器械（含植入类），排除独立软件类产品；</li>
+                  <li>验证应覆盖运输/储存与使用阶段的安全有效性。</li>
+                </ul>
+              </div>
+            </div>
+
+            <!-- 2 评价方式 -->
+            <div>
+              <p class="section-title">2、评价方式</p>
+              <p class="law-text"><strong>【法规原文要求】</strong>“确定产品使用期限的方式一般有两种：1. 预先设定使用期限后验证合理性；2. 通过方法最终确定使用期限。”（见第四章 评价方式）</p>
+              <div class="expert-text">
+                <strong>【专家解读】</strong>
+                <ul class="list-disc pl-5 mt-2 space-y-1">
+                  <li>方式一需同类产品经验或成熟部件历史数据；</li>
+                  <li>方式二适用于创新产品/新技术系统，需完整验证体系；</li>
+                  <li>可组合使用加速老化 + 实时测试 + 仿真计算。</li>
+                </ul>
+              </div>
+            </div>
+
+            <!-- 3 评价路径 -->
+            <div>
+              <p class="section-title">3、评价路径</p>
+              <p class="law-text"><strong>【法规原文要求】</strong>“路径1：直接产品验证；路径2：分解为子系统/部件评价（关键/非关键、可更换/不可更换）。”（见第五章 评价路径）</p>
+              <div class="expert-text">
+                <strong>【专家解读】</strong>
+                <ul class="list-disc pl-5 mt-2 space-y-1">
+                  <li>路径1适用于结构简单产品（血压计、心电图机等），覆盖实际使用场景；</li>
+                  <li>路径2需建立“部件分类矩阵”，以“不可更换关键部件”确定整机基准；</li>
+                  <li>复杂系统推荐“整机验证 + 关键部件补充验证”。</li>
+                </ul>
+              </div>
+            </div>
+
+            <!-- 4 影响因素分析 -->
+            <div>
+              <p class="section-title">4、影响因素分析</p>
+              <p class="law-text"><strong>【法规原文要求】</strong>“应综合考虑关键部件、使用强度、运输环境、清洗消毒、维护维修等七方面因素。”（见第六章 影响因素）</p>
+              <div class="expert-text">
+                <strong>【专家解读】</strong>
+                <ul class="list-disc pl-5 mt-2 space-y-1">
+                  <li>建立关键部件失效模式库（电池衰减、机械疲劳等）；</li>
+                  <li>使用强度含极限工况（最大功率 × 1.5 安全系数）；</li>
+                  <li>运输环境覆盖 -40℃～70℃ 循环与振动谱；</li>
+                  <li>将维护维修记录纳入模型（建议 MTBF ≥ 宣称寿命 × 3）。</li>
+                </ul>
+              </div>
+            </div>
+
+            <!-- 5 评估方法概述 -->
+            <div>
+              <p class="section-title">5、评估方法概述</p>
+              <p class="law-text"><strong>【法规原文要求】</strong>“方法包括：1. 加速老化；2. 同类产品经验；3. 可靠性评估分析。”（见第七章 评价方法）</p>
+              <div class="expert-text">
+                <strong>【专家解读】</strong>
+                <ul class="list-disc pl-5 mt-2 space-y-1">
+                  <li>等效模型：阿伦尼乌斯（电子）、Miner（机械）；</li>
+                  <li>类比需技术等同性（材料 ≥90%、工艺 ≥85%）；</li>
+                  <li>可靠性含 FMEA 与蒙特卡洛；</li>
+                  <li>植入类补充生物相容性时效研究。</li>
+                </ul>
+              </div>
+            </div>
+
+            <!-- 6 结论 -->
+            <div>
+              <p class="section-title">6、结论</p>
+              <p class="law-text"><strong>【法规原文要求】</strong>“需在说明书、标签及风险分析资料中明确使用期限，动态评估生命周期风险。”（见第八章）</p>
+              <div class="expert-text">
+                <strong>【专家解读】</strong>
+                <ul class="list-disc pl-5 mt-2 space-y-1">
+                  <li>遵循“最短板原则”：基于不可更换关键部件寿命；</li>
+                  <li>上市后前 3 年建议季度化提交故障率；</li>
+                  <li>变更管理含寿命影响评估；</li>
+                  <li>宣称期限建议保留 20% 安全余量。</li>
+                </ul>
+                <p class="mt-3 text-xs opacity-80">注：如需展开二/三级子章节，可进一步细化。</p>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <!-- Document 2 -->
+                 <article class="document-card h-full flex flex-col" id="right-card">
+          <div class="flex items-center justify-between gap-3 flex-wrap">
+            <h4>案例2: 一致性核查报告【产品名称】</h4>
+            <div class="flex items-center gap-2">
+              <span class="badge badge-danger" title="存在不一致">结论：一致性不通过</span>
+              <span class="badge badge-success">核查模块：产品名称</span>
+            </div>
+          </div>
+
+          <p class="text-sm text-gray-700 mt-2">
+            <strong>基准：</strong>CH3.4.2《产品技术要求》 → <span class="title-highlight">超声诊断系统</span>
+          </p>
+
+          <div class="overflow-x-auto mt-3">
+            <table class="w-full text-sm text-left">
+              <thead class="bg-gray-100">
+                <tr>
+                  <th class="p-2">文档</th>
+                  <th class="p-2">提取值</th>
+                  <th class="p-2">一致性检查</th>
+                  <th class="p-2">差异高亮</th>
+                  <th class="p-2">建议</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="border-b">
+                  <td class="p-2">CH1.11.1 标准清单及符合性声明</td>
+                  <td class="p-2">超声诊断系统</td>
+                  <td class="p-2 text-green-600">完全一致</td>
+                  <td class="p-2"></td>
+                  <td class="p-2">维持一致</td>
+                </tr>
+                <tr class="border-b">
+                  <td class="p-2">CH1.5 产品列表</td>
+                  <td class="p-2">超声诊断系统</td>
+                  <td class="p-2 text-green-600">完全一致</td>
+                  <td class="p-2"></td>
+                  <td class="p-2">维持一致</td>
+                </tr>
+                <tr class="border-b">
+                  <td class="p-2">CH1.9 既往沟通记录</td>
+                  <td class="p-2">超声诊断系统</td>
+                  <td class="p-2 text-green-600">完全一致</td>
+                  <td class="p-2"></td>
+                  <td class="p-2">维持一致</td>
+                </tr>
+                <tr class="border-b">
+                  <td class="p-2">CH2.2 申报综述</td>
+                  <td class="p-2">超声诊断系统</td>
+                  <td class="p-2 text-green-600">完全一致</td>
+                  <td class="p-2"></td>
+                  <td class="p-2">维持一致</td>
+                </tr>
+                <tr class="border-b">
+                  <td class="p-2">CH2.4.1 器械及原理</td>
+                  <td class="p-2 text-gray-400">无相关内容</td>
+                  <td class="p-2 text-yellow-600">缺失</td>
+                  <td class="p-2"></td>
+                  <td class="p-2">在正文补规范性一句并指向附录；或直接引用基准</td>
+                </tr>
+                <tr class="border-b">
+                  <td class="p-2">CH3.4.2 产品技术要求</td>
+                  <td class="p-2">医疗器械产品技术要求编号：超声诊断系统</td>
+                  <td class="p-2 text-green-600">基准一致</td>
+                  <td class="p-2"></td>
+                  <td class="p-2">作为基准</td>
+                </tr>
+                <tr class="border-b">
+                  <td class="p-2">CH3.5.5 现成软件组件资料</td>
+                  <td class="p-2">超声诊断系统</td>
+                  <td class="p-2 text-green-600">完全一致</td>
+                  <td class="p-2"></td>
+                  <td class="p-2">维持一致</td>
+                </tr>
+                <tr class="border-b bg-red-50">
+                  <td class="p-2">CH3.5.5.8.3 自测报告</td>
+                  <td class="p-2">系统超声诊断</td>
+                  <td class="p-2 text-red-600 font-bold">不一致</td>
+                  <td class="p-2 cell-diff"><mark>[-系统-]</mark>超声诊断 → 统一为 <strong>超声诊断系统</strong></td>
+                  <td class="p-2">去掉冗余“系统”，统一口径</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- 小结 -->
+          <div class="mt-4 text-sm text-gray-700">
+            <p><strong>自动建议：</strong>修正 <em>CH3.5.5.8.3 自测报告</em> 中的产品名称为“超声诊断系统”；在 <em>CH2.4.1 器械及原理</em> 补充规范性引用并指向附录。完成后可一键重验以更新结论。</p>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- Future Preview Section (已还原) -->
+    <section class="container mx-auto px-4 py-16">
+      <div class="fade-in-up">
+        <h2 class="text-3xl md:text-4xl text-center mb-4">未来版本预告</h2>
+        <p class="text-center text-gray-600 mb-12 max-w-2xl mx-auto">系统将持续进化，后续版本将集成更深入的文档智能功能，敬请期待。</p>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <!-- Feature Card 1 -->
+          <div class="feature-card">
+            <h3 class="text-xl mb-4 flex items-center"><i class="fa-solid fa-cogs mr-3" style="color: #F05E1C;"></i>技术文档生成</h3>
+            <ul class="space-y-2 text-sm text-gray-700 list-disc list-inside">
+              <li>按产品需求规格，自动生成技术要求文档。</li>
+              <li>智能填充参数与数据，加速文档编写。</li>
+              <li>确保术语在所有文档中保持一致。</li>
+            </ul>
+          </div>
+          <!-- Feature Card 2 -->
+          <div class="feature-card">
+            <h3 class="text-xl mb-4 flex items-center"><i class="fa-solid fa-link mr-3" style="color: #F05E1C;"></i>长模块一致性核查</h3>
+            <ul class="space-y-2 text-sm text-gray-700 list-disc list-inside">
+              <li>支持临床报告等长篇内容的深度比对。</li>
+              <li>通过语义分析，核对核心观点与数据。</li>
+              <li>高亮显示潜在的逻辑或数据冲突。</li>
+            </ul>
+          </div>
+          <!-- Feature Card 3 -->
+          <div class="feature-card">
+            <h3 class="text-xl mb-4 flex items-center"><i class="fa-solid fa-stamp mr-3" style="color: #F05E1C;"></i>法规符合性核查</h3>
+            <ul class="space-y-2 text-sm text-gray-700 list-disc list-inside">
+              <li>自动将文档与法规要求进行逐条核对。</li>
+              <li>一键生成合规自查清单，状态清晰。</li>
+              <li>提示并定位不符合项，辅助审查。</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- DARK FOOTER -->
+  <footer class="bg-gray-800 text-white py-12 no-print">
+    <div class="container mx-auto px-4 text-center">
+      <h2 class="text-3xl">开启智能合规新时代</h2>
+      <p class="mt-4 max-w-xl mx-auto text-gray-300">
+        AI-RA 系统旨在将繁琐的法规文档工作流转变为高效、精准、可控的自动化流程，让您的团队专注于创新而非文书。
+      </p>
+      <button onclick="exportHTML()" class="mt-8 px-6 py-3 rounded-md font-bold text-gray-900 transition-all hover:scale-105 active:scale-95" style="background-color: #F05E1C;">
+        <i class="fa-solid fa-download mr-2"></i> 下载本页为 HTML
+      </button>
+      <div class="mt-12 pt-8 border-t border-gray-700 text-sm text-gray-400">
+        <p>&copy; 2025 AI-RA Project. All Rights Reserved.</p>
+        <p class="mt-1">由 Gemini Pro 生成 | 设计哲学遵循用户指令 v5.0</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- JAVASCRIPT -->
+  <script type="module">
+    /**
+     * 下载当前页面为单一 HTML 文件
+     */
+    window.exportHTML = function() {
+      const clonedDoc = document.documentElement.cloneNode(true);
+      const htmlContent = '<!DOCTYPE html>\n' + clonedDoc.outerHTML;
+      const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'AI-RA.html';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(a.href);
+    }
+
+    /**
+     * 进场动画
+     */
+    document.addEventListener('DOMContentLoaded', () => {
+      const animatedElements = document.querySelectorAll('.fade-in-up');
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => { if (entry.isIntersecting) entry.target.classList.add('is-visible'); });
+      }, { threshold: 0.1 });
+      animatedElements.forEach(el => observer.observe(el));
+    });
+
+    /**
+     * 硬锁定等高：直接把左卡片高度设为右卡片高度
+     */
+    function hardLockEqualHeight() {
+      const leftCard = document.getElementById('left-card');
+      const rightCard = document.getElementById('right-card');
+      if (!leftCard || !rightCard) return;
+
+      const twoCols = window.matchMedia('(min-width: 1280px)').matches;
+      if (!twoCols) {
+        // 单列：恢复自动高度
+        leftCard.style.height = '';
+        return;
+      }
+
+      // 直接把左卡高度 = 右卡高度（向上取整避免 0.5px 造成差一像素）
+      const h = Math.ceil(rightCard.getBoundingClientRect().height);
+      leftCard.style.height = h + 'px';
+    }
+
+    // 硬锁定等高
+    window.addEventListener('load', () => setTimeout(hardLockEqualHeight, 100));
+    window.addEventListener('resize', () => setTimeout(hardLockEqualHeight, 100));
+    
+    // 用 ResizeObserver 监听右卡尺寸变化
+    const ro = new ResizeObserver(() => setTimeout(hardLockEqualHeight, 50));
+    const rightCardEl = document.getElementById('right-card');
+    if (rightCardEl) ro.observe(rightCardEl);
+    
+    // 字体加载完成后也执行一次
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(hardLockEqualHeight);
+    }
+  </script>
+</body>
+</html>
